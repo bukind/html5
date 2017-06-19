@@ -6,7 +6,6 @@
 <style>
 canvas {
   border: 1px solid #000000;
-  background-color: #fff0f0;
 }
 </style>
 </head>
@@ -16,38 +15,45 @@ canvas {
 
 function start() {
   // parameters of the game
-  var sz = 5;  // better be odd.
-  var width = 600;
-  var height = 480;
+  var hsz = 1; // half-size of the block.
+  var nx = 120; // half-width of the histogram.
+  var ny = 30; // height of the histogram.
+  var speed = 100; // the smaller the faster.
 
-  var field = newField(sz, width, height);
+  var field = newField(hsz, nx, ny, speed);
   field.start();
 }
 
 function newSand(field) {
   var sand = {
     field: field,
-    x: Math.floor(field.width / 2) - Math.floor((field.sz+1)/2),
+    x: field.nx * (field.sz+1),
     y: 0,
-    steps: field.steps,
+    fgcolor: "#00e0ff",
+    steps: field.nx*2+1,
     draw: function() {
-      this._draw("#00e0ff");
+      this._draw(this.fgcolor);
     },
     clear: function() {
-      this._draw("#fff0f0");
+      this._draw(this.field.bgcolor);
     },
     _draw: function(fill) {
       this.field.ctx.fillStyle = fill;
       this.field.ctx.fillRect(this.x, this.y, this.field.sz, this.field.sz);
     },
     newPos: function() {
+      var lr;
       this.y += this.field.sz + 1;
       if (this.steps > 0) {
         this.steps -= 1;
-        this.x += (Math.floor(Math.random()*2)*2-1) * 
-            Math.floor((this.field.sz+1)/2);
+        lr = Math.floor(Math.random()*2)*2 - 1; // -1 or +1
+        this.x += lr * (this.field.hsz+1);
       } else {
-        if (this.y > this.field.height - 10) {
+        var idx = Math.floor(this.x / (this.field.sz+1));
+        var stopy = this.field.histo[idx];
+        if (this.y >= stopy) {
+          this.y = stopy;
+          this.field.histo[idx] = stopy - this.field.sz;
           return false;
         }
       }
@@ -61,28 +67,31 @@ function tick(field) {
   field.tick();
 }
 
-function newField(sz, width, height) {
+function newField(hsz, nx, ny, speed) {
   var field = {
-    sz: sz,
-    width: width,
-    height: height,
-    fired: 0,
-    steps: Math.floor(height * 0.7 / (sz+1)),
+    hsz: hsz,
+    sz: hsz*2 + 1,
+    nx: nx,
+    ny: ny,
+    speed: speed,
+    fired: 0,  // how many sands fired.
+    bgcolor: "#fff0f0",
     canvas: document.createElement("canvas"),
-    sands: [],
+    sands: [], // active sands.
+    histo: [], // the histogram level values.
     start: function() {
-      var i;
-      this.canvas.width = this.width;
-      this.canvas.height = this.height;
+      this.canvas.width = (2*this.nx+1)*(this.sz+1)-1;
+      this.canvas.height = (2*this.nx+1)*(this.sz+1) + this.ny*this.sz;
+      this.canvas.style.background = this.bgcolor;
       this.ctx = this.canvas.getContext("2d");
       document.body.insertBefore(this.canvas, document.body.childNodes[0]);
       buildPegboard(this);
-      this.interval = setInterval(tick, 50, this);
+      this.interval = setInterval(tick, this.speed, this);
     },
     tick: function() {
       if (this.fired < 200) {
         if (this.sands.length === 0 ||
-            this.sands[this.sands.length-1].steps < this.steps - 4) {
+            this.sands[this.sands.length-1].y > (this.sz+1)*2) {
           // start a new sand
           this.sands.push(newSand(this));
           this.fired += 1;
@@ -115,17 +124,19 @@ function newField(sz, width, height) {
 function buildPegboard(field) {
   var i;
   var j;
-  var n = 1;
   var starty = field.sz;
-  var startx = Math.floor(field.width / 2);
+  var startx = Math.floor(field.canvas.width/2);
   field.canvas.fillStyle = "#000000";
-  for (i = 0; i < field.steps; i++) {
-    for (j = 0; j < n; j++) {
+  for (i = 0; i < field.nx*2+1; i++) {
+    for (j = 0; j < i+1; j++) {
       field.ctx.fillRect(startx + j*(field.sz+1), starty, 1, 1);
     }
     starty += field.sz + 1;
-    startx -= Math.floor((field.sz+1)/2);
-    n += 1;
+    startx -= field.hsz + 1;
+  }
+  starty = field.canvas.height - field.sz;
+  for (i = 0; i < field.nx*2+1; i++) {
+    field.histo.push(starty);
   }
 }
 </script>
