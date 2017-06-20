@@ -49,11 +49,7 @@ function newSand(field) {
         lr = Math.floor(Math.random()*2)*2 - 1; // -1 or +1
         this.x += lr * (this.field.hsz+1);
       } else {
-        var idx = Math.floor(this.x / (this.field.sz+1));
-        var stopy = this.field.histo[idx];
-        if (this.y >= stopy) {
-          this.y = stopy;
-          this.field.histo[idx] = stopy - this.field.sz;
+        if (this.field.reachedHisto(this.x, this.y, this.fgcolor)) {
           return false;
         }
       }
@@ -101,6 +97,17 @@ function newField(hsz, nx, ny, speed) {
       }
       this.draw();
     },
+    reachedHisto: function(x, y, color) {
+      var idx = Math.floor(x / (this.sz+1));
+      var stopy = this.canvas.height - this.sz*(this.histo[idx]+1);
+      if (y >= stopy) {
+        this.histo[idx] += 1;
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(x, stopy, this.sz, this.canvas.height - stopy);
+        return true;
+      }
+      return false;
+    },
     draw: function() {
       var i;
       var keep = [];
@@ -112,10 +119,10 @@ function newField(hsz, nx, ny, speed) {
           keep.push(this.sands[i]);
         }
       }
+      this.sands = keep;
       for (i = 0; i < this.sands.length; i++) {
         this.sands[i].draw();
       }
-      this.sands = keep;
     }
   }
   return field;
@@ -134,9 +141,8 @@ function buildPegboard(field) {
     starty += field.sz + 1;
     startx -= field.hsz + 1;
   }
-  starty = field.canvas.height - field.sz;
   for (i = 0; i < field.nx*2+1; i++) {
-    field.histo.push(starty);
+    field.histo.push(0);
   }
 }
 </script>
