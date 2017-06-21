@@ -16,15 +16,15 @@ canvas {
 function start() {
   // parameters of the game
   var hsz = 1; // half-size of the block.
-  var nx = 20; // half-width of the histogram.
-  var ny = 30; // height of the histogram.
-  var speed = 60; // the smaller the faster.
+  var nx = 100; // half-width of the histogram.
+  var ny = 40; // height of the histogram.
+  var speed = 30; // the smaller the faster.
 
-  var field = newField(hsz, nx, ny, speed);
+  var field = new Field(hsz, nx, ny, speed);
   field.start();
 }
 
-function sand(field) {
+function Sand(field) {
   this.field = field;
   this.x = field.nx * (field.sz+1);
   this.y = 0;
@@ -53,104 +53,103 @@ function sand(field) {
   };
 }
 
-function newField(hsz, nx, ny, speed) {
-  var field = {
-    hsz: hsz,
-    sz: hsz*2 + 1,
-    nx: nx,
-    ny: ny,
-    speed: speed,
-    interval: null,
-    fired: 0,  // how many sands fired.
-    bgcolor: "#fff0f0",
-    fgcolor: "#00e0ff",
-    canvas: document.createElement("canvas"),
-    sands: [], // active sands.
-    histofactor: 1,
-    histo: [], // the histogram level values.
-    stopping: false,
-    start: function() {
-      this.canvas.width = (2*this.nx+1)*(this.sz+1)-1;
-      this.canvas.height = (2*this.nx+1)*(this.sz+1) + this.ny*this.sz;
-      this.canvas.style.background = this.bgcolor;
-      this.ctx = this.canvas.getContext("2d");
-      document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-      buildPegboard(this);
-      this.canvas.onclick = function() { field.pause(); }
-      this.pause();
-    },
-    pause: function() {
-      if (this.interval === null) {
-        this.interval = setInterval(function() { field.tick(); }, this.speed);
-      } else {
-        clearInterval(this.interval);
-        this.interval = null;
+function Field(hsz, nx, ny, speed) {
+  this.hsz = hsz;
+  this.sz = hsz*2 + 1;
+  this.nx = nx;
+  this.ny = ny;
+  this.speed = speed;
+  this.interval = null;
+  this.fired = 0;  // how many sands fired.
+  this.bgcolor = "#fff0f0";
+  this.fgcolor = "#00e0ff";
+  this.canvas = document.createElement("canvas");
+  this.sands = []; // active sands.
+  this.histofactor = 1;
+  this.histo = []; // the histogram level values.
+  this.stopping = false;
+  // -- methods
+  var field = this;
+  this.start = function() {
+    this.canvas.width = (2*this.nx+1)*(this.sz+1)-1;
+    this.canvas.height = (2*this.nx+1)*(this.sz+1) + this.ny*this.sz;
+    this.canvas.style.background = this.bgcolor;
+    this.ctx = this.canvas.getContext("2d");
+    document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+    this.buildPegboard();
+    this.canvas.onclick = function() { field.pause(); }
+    this.pause();
+  };
+  this.pause = function() {
+    if (this.interval === null) {
+      this.interval = setInterval(function() { field.tick(); }, this.speed);
+    } else {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+  };
+  this.tick = function() {
+    if (!this.stopping) {
+      if (this.sands.length === 0 ||
+          this.sands[this.sands.length-1].y > (this.sz+1)*2) {
+        // start a new sand
+        this.sands.push(new Sand(this));
+        this.fired += 1;
       }
-    },
-    tick: function() {
-      if (!this.stopping) {
-        if (this.sands.length === 0 ||
-            this.sands[this.sands.length-1].y > (this.sz+1)*2) {
-          // start a new sand
-          this.sands.push(new sand(this));
-          this.fired += 1;
-        }
-      } else if (this.sands.length === 0) {
-        clearInterval(this.interval);
-      }
-      this.draw();
-    },
-    reachedHisto: function(x, y) {
-      var idx = Math.floor(x / (this.sz+1));
-      var stopy = this.canvas.height - this.sz*(this.histo[idx]+1)/this.histofactor;
-      if (y >= stopy) {
-        this.histo[idx] += 1;
-        this.ctx.fillStyle = this.fgcolor;
-        this.ctx.fillRect(x, stopy, this.sz, this.canvas.height - stopy);
-        return true;
-      }
-      return false;
-    },
-    draw: function() {
-      var i;
-      var keep = [];
-      for (i = 0; i < this.sands.length; i++) {
-        this.sands[i].clear();
-      }
-      for (i = 0; i < this.sands.length; i++) {
-        if (this.sands[i].newPos()) {
-          keep.push(this.sands[i]);
-        }
-      }
-      if (this.sands.length != keep.length) {
-        // TODO: redraw the histogram if any of the sands landed on it.
-        this.sands = keep;
-      }
-      for (i = 0; i < this.sands.length; i++) {
-        this.sands[i].draw();
+    } else if (this.sands.length === 0) {
+      clearInterval(this.interval);
+    }
+    this.draw();
+  };
+  this.reachedHisto = function(x, y) {
+    var idx = Math.floor(x / (this.sz+1));
+    var stopy = this.canvas.height - this.sz*(this.histo[idx]+1)/this.histofactor;
+    if (y >= stopy) {
+      this.histo[idx] += 1;
+      this.ctx.fillStyle = this.fgcolor;
+      this.ctx.fillRect(x, stopy, this.sz, this.canvas.height - stopy);
+      return true;
+    }
+    return false;
+  };
+  this.draw = function() {
+    var i;
+    var keep = [];
+    for (i = 0; i < this.sands.length; i++) {
+      this.sands[i].clear();
+    }
+    for (i = 0; i < this.sands.length; i++) {
+      if (this.sands[i].newPos()) {
+        keep.push(this.sands[i]);
       }
     }
-  }
-  return field;
+    if (this.sands.length != keep.length) {
+      // TODO: redraw the histogram if any of the sands landed on it.
+      this.sands = keep;
+    }
+    for (i = 0; i < this.sands.length; i++) {
+      this.sands[i].draw();
+    }
+  };
+  this.buildPegboard = function() {
+    var i;
+    var j;
+    var starty = this.sz;
+    var startx = Math.floor(this.canvas.width/2);
+    this.canvas.fillStyle = "#000000";
+    for (i = 0; i < this.nx*2; i++) {
+      for (j = 0; j < i+1; j++) {
+        this.ctx.fillRect(startx + j*(this.sz+1), starty, 1, 1);
+      }
+      starty += this.sz + 1;
+      startx -= this.hsz + 1;
+    }
+    for (i = 0; i < this.nx*2+1; i++) {
+      this.histo.push(0);
+    }
+  };
 }
 
-function buildPegboard(field) {
-  var i;
-  var j;
-  var starty = field.sz;
-  var startx = Math.floor(field.canvas.width/2);
-  field.canvas.fillStyle = "#000000";
-  for (i = 0; i < field.nx*2; i++) {
-    for (j = 0; j < i+1; j++) {
-      field.ctx.fillRect(startx + j*(field.sz+1), starty, 1, 1);
-    }
-    starty += field.sz + 1;
-    startx -= field.hsz + 1;
-  }
-  for (i = 0; i < field.nx*2+1; i++) {
-    field.histo.push(0);
-  }
-}
 </script>
 </body>
 </html>
