@@ -158,6 +158,8 @@ function Field(hsz, nx, ny, speed) {
   this.draw = function() {
     var i;
     var keep = [];
+    this.ctx.font = "20px Arial";
+    this.fillText(this.fired.toString(), 0, 0)
     for (i = 0; i < this.sands.length; i++) {
       this.sands[i].clear();
     }
