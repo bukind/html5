@@ -89,11 +89,9 @@ function Histo(field) {
     maxy = this.field.sz * maxy / this.factor;
     if (maxy >= limit) {
       // we have to factorize
-      for (i = 0; i < this.bins.length; i++) {
-        if (this.bins[i] !== 0) {
-          this._drawBin(i, this.field.bgcolor);
-        }
-      }
+      this.field.ctx.fillStyle = this.field.bgcolor;
+      this.field.ctx.fillRect(0, this.field.height-limit,
+                              this.field.width, limit);
       this.factor *= 1.6;
       for (i = 0; i < this.bins.length; i++) {
         if (this.bins[i] !== 0) {
