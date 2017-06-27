@@ -121,7 +121,7 @@ function Field(hsz, nx, ny, speed) {
   this.canvas = document.createElement("canvas");
   this.sands = []; // active sands.
   this.histo = new Histo(this); // the histogram level values.
-  this.stopping = false;
+  this.stopping = true;
   // -- methods
   var field = this;
   this.start = function() {
@@ -131,17 +131,20 @@ function Field(hsz, nx, ny, speed) {
     this.ctx = this.canvas.getContext("2d");
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
     this._buildPegboard();
-    this.canvas.onclick = function() { field.pause(); }
+    this.canvas.onclick = function() {
+      field.pause();
+    }
     this.pause();
   };
+  // Pause/unpause the loop.
+  // inverse stopping flag and setup tick function if needed.
   this.pause = function() {
-    if (this.interval === null) {
+    this.stopping = !this.stopping;
+    if (!this.stopping && this.interval === null) {
       this.interval = setInterval(function() { field.tick(); }, this.speed);
-    } else {
-      clearInterval(this.interval);
-      this.interval = null;
     }
   };
+  // Tick and update state.
   this.tick = function() {
     if (!this.stopping) {
       if (this.sands.length === 0 ||
@@ -151,7 +154,11 @@ function Field(hsz, nx, ny, speed) {
         this.fired += 1;
       }
     } else if (this.sands.length === 0) {
-      clearInterval(this.interval);
+      if (this.interval !== null) {
+        // stop.
+        clearInterval(this.interval);
+        this.interval = null;
+      }
     }
     this.draw();
   };
