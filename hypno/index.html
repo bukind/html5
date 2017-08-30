@@ -14,7 +14,7 @@ canvas {
 
 function start() {
   var msdelay = 20;  // the number of ms b/w frames
-  var rpt = .7;     // rotation per tick, radians
+  var rpt = .65;     // rotation per tick, radians
 
   var spiral = new Spiral(msdelay, rpt);
   spiral.start();
@@ -45,11 +45,14 @@ function Spiral(msdelay, rpt) {
 
   this.draw = function() {
     // r = a * phi;
+    var drpt;
+
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.tick += 1;
 
-    this.spiral(0.011, 1.29, this.rpt);
-    this.spiral(0.01, 1.3, this.rpt*1.1);
+    drpt = 0.05 * Math.sin(this.tick*0.01)
+    this.spiral(0.011, 1.29, rpt*(1+drpt));
+    this.spiral(0.01, 1.3, rpt*(1.1-drpt));
   };
 
   this.spiral = function(a, b, rpt) {
