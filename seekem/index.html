@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>Найди их.</title>
+<style>
+canvas {
+  border: 1px solid #000000;
+}
+</style>
+</head>
+<body onload="start()">Ждите загрузки...<script>
+"use strict";
+
+function start() {
+  var board = new Board();
+}
+
+function show(msg) {
+  var console = document.getElementById("console");
+  console.value += "\n" + msg;
+  console.scrollTop = console.scrollHeight;
+}
+
+function sizeString(x, y) {
+  return x + "x" + y;
+}
+
+function Board() {
+  // создаем консоль
+  var condiv = document.createElement("DIV");
+  condiv.style.overflow = "hidden";
+  condiv.style.padding = "0";
+
+  var console = document.createElement("TEXTAREA");
+  console.rows = 5;
+  console.id = "console";
+  console.disabled = true;
+  console.style.width = "100%";
+  console.style.fontSize = "xx-large";
+
+  condiv.appendChild(console);
+  document.body.replaceChild(condiv, document.body.childNodes[0]);
+
+  show("fontSize=" + window.getComputedStyle(console).fontSize);
+
+  // get the width of the window
+  show("window="+sizeString(window.innerWidth, window.innerHeight));
+  var html = document.documentElement;
+  show("html=" + sizeString(html.clientWidth, html.clientHeight));
+  var cwx = document.body.clientWidth - 20;
+  var cwy = window.innerHeight - document.body.clientHeight - 20;
+  show("canvas=" + sizeString(cwx, cwy));
+  this.canvas = document.createElement("canvas");
+  this.canvas.width = cwx;
+  this.canvas.height = cwy;
+  document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+
+  show("Ждите продолжения...");
+}
+</script></body></html>
